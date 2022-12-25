@@ -20,13 +20,14 @@ class GameService:
         pass
 
     def get_game(self, game_id: int) -> Game:
-        # à implementer
-        pass
+        return self.game_dao.find_game(game_id)
 
     def add_vessel(self, game_id: int, player_name: str, vessel_type: str,
                    x: int, y: int, z: int) -> bool:
         # à implementer
-        pass
+        game = self.get_game(game_id)
+        game.add_player(Player(player_name, battle_field))
+        return self.game_dao.create_game(game)
 
     def shoot_at(self, game_id: int, shooter_name: str, vessel_id: int, x: int, y: int, z: int) -> bool:
         # à implementer

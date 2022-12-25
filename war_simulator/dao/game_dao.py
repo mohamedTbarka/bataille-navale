@@ -8,6 +8,7 @@ from war_simulator.model.game import Game
 from war_simulator.model.player import Player
 import sqlalchemy.types as types
 
+from war_simulator.model.vessel import Vessel
 
 engine = create_engine('sqlite:////tmp/td---------log.db', echo=True, future=True)
 Base = declarative_base(bind=engine)
@@ -17,8 +18,8 @@ Session = sessionmaker(bind=engine)
 class GameEntity(Base):
     __tablename__ = 'game'
     id = Column(Integer, primary_key=True)
-    players = relationship("PlayerEntity", back_populates="game",
-                           cascade="all, delete-orphan")
+    players = relationship("PlayerEntity", back_populates="game", cascade="all, delete-orphan")
+
 
 class PlayerEntity(Base):
     __tablename__ = 'player'
@@ -27,7 +28,7 @@ class PlayerEntity(Base):
     game_id = Column(Integer, ForeignKey("game.id"), nullable=False)
     game = relationship("GameEntity", back_populates="players")
     battle_fields = relationship("BattlefieldEntity", back_populates="player", uselist=False,
-                                cascade="all, delete-orphan")
+                                 cascade="all, delete-orphan")
 
 
 class BattlefieldEntity(Base):
@@ -41,11 +42,8 @@ class BattlefieldEntity(Base):
     max_z = Column(Integer, nullable=False)
     max_power = Column(Integer, nullable=False)
     player_id = Column(Integer, ForeignKey("player.id"), nullable=False)
-    player = relationship("PlayerEntity", back_populates="battle_fields",)
-    vessels = relationship("VesselEntity", back_populates="battlefield",
-                           cascade="all, delete-orphan")
-
-
+    player = relationship("PlayerEntity", back_populates="battle_fields", )
+    vessels = relationship("VesselEntity", back_populates="battlefield", cascade="all, delete-orphan")
 
 
 class ChoiceType(types.TypeDecorator):
@@ -65,9 +63,7 @@ class ChoiceType(types.TypeDecorator):
 class Entity(Base):
     __tablename__ = "entity"
     id = Column(Integer, primary_key=True)
-    height = Column(
-        ChoiceType({"short": "short", "medium": "medium", "tall": "tall"}), nullable=False
-    )
+    height = Column(ChoiceType({"short": "short", "medium": "medium", "tall": "tall"}), nullable=False)
 
 
 class VesselEntity(Base):
@@ -85,11 +81,9 @@ class VesselEntity(Base):
     battle_id = Column(Integer, ForeignKey("battlefield.id"), nullable=False)
 
     battlefield = relationship("BattlefieldEntity", back_populates="vessels")
-    type = Column(
-        ChoiceType({CRUISER: CRUISER, DESTROYER: DESTROYER, FRIGATE: FRIGATE, SUBMARINE: SUBMARINE}), nullable=False
-    )
-    weapons = relationship("WeaponEntity", back_populates="vessel",
-                 cascade="all, delete-orphan")
+    type = Column(ChoiceType({CRUISER: CRUISER, DESTROYER: DESTROYER, FRIGATE: FRIGATE, SUBMARINE: SUBMARINE}),
+                  nullable=False)
+    weapons = relationship("WeaponEntity", back_populates="vessel", cascade="all, delete-orphan")
 
 
 class WeaponEntity(Base):
@@ -103,10 +97,8 @@ class WeaponEntity(Base):
     range = Column(Integer, nullable=False)
     vessel_id = Column(Integer, ForeignKey("vessel.id"), nullable=False)
     vessel = relationship("VesselEntity", back_populates="weapons")
-    type = Column(
-        ChoiceType({AIRMISSILELAUNCHER: AIRMISSILELAUNCHER, SURFACEMISSILELAUNCHER: SURFACEMISSILELAUNCHER,
-                    TORPEDOLAUNCHER: TORPEDOLAUNCHER}), nullable=False
-    )
+    type = Column(ChoiceType({AIRMISSILELAUNCHER: AIRMISSILELAUNCHER, SURFACEMISSILELAUNCHER: SURFACEMISSILELAUNCHER,
+                              TORPEDOLAUNCHER: TORPEDOLAUNCHER}), nullable=False)
 
 
 def map_to_game_entity(game: Game):
@@ -119,12 +111,21 @@ def map_to_game(game_entity: GameEntity):
         g.add_player(player)
     return g
 
-def mat_to_battle_entity(battlefield: Battlefield):
-    return BattlefieldEntity(battlefield.min_x, battlefield.min_y, battlefield.min_z, battlefield.max_x, battlefield.max_y, battlefield.max_z, battlefield.max_power, )
+
+def map_to_battle_field_entity(battlefield: Battlefield):
+    return BattlefieldEntity(battlefield.min_x, battlefield.min_y, battlefield.min_z, battlefield.max_x,
+                             battlefield.max_y, battlefield.max_z, battlefield.max_power, )
 
 
-def map_to_player_entity(player: Player, game: Game, battlefield: Battlefield):
-    return PlayerEntity(id=player.id, name=player.name, game_id=game.id, game=map_to_game_entity(game), battle_field=battlefield)
+def map_to_player_entity(player: Player, game: Game):
+    return PlayerEntity(id=player.id, name=player.name, game_id=game.id, game=map_to_game_entity(game))
+
+
+def map_to_vessel_entity(vessel: Vessel, battlefield: Battlefield):
+    coord_x, coord_y, coord_z = vessel.get_coordinates()
+    return VesselEntity(id=vessel.id, coord_x=coord_x, coord_y=coord_y, coord_z=coord_z,
+                        hits_to_be_destroyed=vessel.hits_to_be_destroyed,
+                        battlefield=map_to_battle_field_entity(battlefield), type=vessel)
 
 
 class BattleField:
@@ -147,8 +148,14 @@ class GameDao:
         game_entity = self.db_session.scalars(stmt).one()
         return map_to_game_entity(game_entity)
 
-    def create_player(self, player: Player, game: Game, battlefield: BattleField) -> int:
-        player_entity = map_to_player_entity(player, game, battlefield)
+    def create_player(self, player: Player, game: Game) -> int:
+        player_entity = map_to_player_entity(player, game)
         self.db_session.add(player_entity)
         self.db_session.commit()
         return player_entity.id
+
+    def create_vessel(self, vessel: Vessel, battlefield: Battlefield):
+        vessel_entity = map_to_vessel_entity(vessel, battlefield)
+        self.db_session.add(vessel_entity)
+        self.db_session.commit()
+        return vessel_entity.id
