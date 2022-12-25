@@ -1,5 +1,5 @@
-from exceptions import GameFullError
-from player import Player
+from war_simulator.model.exceptions import GameFullError
+from war_simulator.model.player import Player
 
 
 class Game:

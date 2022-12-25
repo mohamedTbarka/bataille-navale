@@ -1,7 +1,7 @@
 from math import sqrt
 
-from exceptions import DestroyedError, OutOfRangeError
-from weapon import Weapon
+from war_simulator.model.exceptions import DestroyedError, OutOfRangeError
+from war_simulator.model.weapon import Weapon
 
 
 class Vessel:

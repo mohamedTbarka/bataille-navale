@@ -1,4 +1,4 @@
-from battlefield import Battlefield
+from war_simulator.model.battlefield import Battlefield
 
 
 class Player:
