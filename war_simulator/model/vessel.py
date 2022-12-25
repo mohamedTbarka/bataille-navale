@@ -5,8 +5,8 @@ from war_simulator.model.weapon import Weapon
 
 
 class Vessel:
-    def __init__(self, id:int, x: float, y: float, z: float, hits: int,
-                 weapon: Weapon, type: str):
+    def __init__(self, id:int or None, x: float, y: float, z: float, hits: int or None,
+                 weapon: Weapon or None, type: str):
         self.id = id
         self.coordinates = x, y, z
         self.hits_to_be_destroyed = hits

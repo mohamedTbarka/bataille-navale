@@ -117,8 +117,8 @@ def map_to_battle_field_entity(battlefield: Battlefield):
                              battlefield.max_y, battlefield.max_z, battlefield.max_power, )
 
 
-def map_to_player_entity(player: Player, game: Game):
-    return PlayerEntity(id=player.id, name=player.name, game_id=game.id, game=map_to_game_entity(game))
+def map_to_player_entity(player: Player):
+    return PlayerEntity(id=player.id, name=player.name)
 
 
 def map_to_vessel_entity(vessel: Vessel, battlefield: Battlefield):
@@ -148,8 +148,13 @@ class GameDao:
         game_entity = self.db_session.scalars(stmt).one()
         return map_to_game_entity(game_entity)
 
-    def create_player(self, player: Player, game: Game) -> int:
-        player_entity = map_to_player_entity(player, game)
+    def find_player(self, player_name: str) -> Player:
+        stmt = select(PlayerEntity).where(PlayerEntity.name == player_name)
+        player_entity = self.db_session.scalars(stmt).one()
+        return map_to_player_entity(player_entity)
+
+    def create_player(self, player: Player) -> int:
+        player_entity = map_to_player_entity(player)
         self.db_session.add(player_entity)
         self.db_session.commit()
         return player_entity.id
@@ -159,3 +164,10 @@ class GameDao:
         self.db_session.add(vessel_entity)
         self.db_session.commit()
         return vessel_entity.id
+    def update_vessel(self, vessel: Vessel):
+        stmt = select(VesselEntity).where(VesselEntity.id == vessel.id)
+        vessel_entity = self.db_session.scalars(stmt).one()
+        vessel_entity.coord_x, vessel_entity.coord_y, vessel_entity.coord_z = vessel.get_coordinates()
+        vessel_entity.hits_to_be_destroyed = vessel.hits_to_be_destroyed
+        vessel_entity.type = vessel.type
+        self.db_session.commit()
