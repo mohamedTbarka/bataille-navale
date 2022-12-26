@@ -27,6 +27,9 @@ class GameService:
     def get_player(self, player_name: str) -> Player:
         return self.game_dao.find_player(player_name)
 
+    def find_vessel(self, vessel_id: int) -> Player:
+        return self.game_dao.find_vessel(vessel_id)
+
     def add_vessel(self, game_id: int, player_name: str, vessel_type: str, x: int, y: int, z: int) -> bool:
         # à implementer
         game = self.get_game(game_id)
@@ -39,7 +42,8 @@ class GameService:
 
     def shoot_at(self, game_id: int, shooter_name: str, vessel_id: int, x: int, y: int, z: int) -> bool:
         # à implementer
-        pass
+        vessel = self.game_dao.find_vessel(vessel_id)
+        map_to_vessel
 
     def get_game_status(self, game_id: int, shooter_name: str) -> str:
         # à implemente
